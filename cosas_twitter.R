@@ -15,37 +15,14 @@ library(maps)
 setwd("~/Emotion_Analysis_TM")
 source('./my_oauth.r', encoding = 'latin1')
 
-#tw = twitteR::searchTwitter('#VotenAbortoLegal + #SalvemosLas2Vidas', n = 20, since = '2018-06-12 00:22:51', until='2016-06-12 02:22:51', retryOnRateLimit = 1e3)
-#tweets.df <- twListToDF(tw)
+
+filterStream(file.name="./tweets/leyaborto.json", locations = c(-72,-55,-55,-22),language = "es",  track = c("#AbortoLegalYa","#AbortoLegalSeguroYGratuito","#13JAbortoLegal","#VotenAbortoLegal","#SalvemosLas2Vidas","#ArgentinaEsProVida","#SiALaVida","#NoAlAborto"),  oauth = my_oauth)
+
+leyaborto.df <- parseTweets("./tweets/leyaborto.json", verbose = FALSE, encoding="UTF-8")
 
 
-#SalvemosLas2Vidas
-#AbortoLegalYa
-#AbortoLegal
-#AbortoLegalSeguroYGratuito
-#AbortoSinBarreras
-#13JAbortoLegal
-#VotenAbortoLegal
-#NoAlAborto
-#SiALaVida
-#MentiraVerde
-#ArgentinaEsProVida
-#ElijamosLas2Vidas
-
-i=1
-for (i in range(10)){
-  filterStream(file.name="./tweets/tweets_abortolegal.json", locations = c(-72,-55,-55,-22), language = "es", track = c("#AbortoLegalYa","#AbortoLegalSeguroYGratuito","#13JAbortoLegal","#VotenAbortoLegal"), timeout = 3,  oauth = my_oauth)
-}
 
 
-i=1
-for (i in range(10)){
-filterStream(file.name="./tweets/tweets_2vidas.json", locations = c(-72,-55,-55,-22),language = "es",  track = c("#SalvemosLas2Vidas","#ArgentinaEsProVida","#SiALaVida","#NoAlAborto"), timeout = 30,  oauth = my_oauth)
-}
-
-
-tweetslegal.df <- parseTweets("./tweets/tweets_abortolegal.json", verbose = FALSE)
-tweets2vidas.df <- parseTweets("./tweets/tweets_2vidas.json", verbose = FALSE)
 
 
 
