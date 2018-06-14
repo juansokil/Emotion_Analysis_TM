@@ -69,36 +69,18 @@ head(data.tweet$created_at,10)
 ###veo las variables
 str(data.tweet)
 
-
-
-###Guardo solo los georeferenciados###
+###selecciono solo los georeferenciados###
 data.tweet_georef<-subset(data.tweet, (!is.na(data.tweet$place_lat)))
 
+###Guardo la base de tweets
+write.table(data.tweet, file="./data.tweet.txt", row.names=FALSE, col.names=TRUE, quote=TRUE, sep="\t", eol = "\r\n")
 
 
 
-#dataset <- read.table( archivo_entrada, header=TRUE, sep="\t", row.names=campo_id, encoding="latin1")
-#write.table(data.tweet_georef, file= data.tweet_georef, row.names=FALSE, col.names=TRUE, quote=FALSE, sep="\t", eol = "\r\n")
-
-write.csv(data.tweet_georef, 'salida.csv')
-#leo el dataset
-
-  
-
-
-#rm(list = c('leyaborto.df','points','pais7','pais8','pais9'))
-
-
-
-##http://enhancedatascience.com/2017/07/17/twitter-analysis-using-r/
-
-
-
-
-
-
-
-
+#leo el dataset 
+## ESTO ES UN CONTROL  NOMAS (SERIA BUENO HACERLO CON READ.TABLE, POR AHORA NO ME FUNCIONA)
+data_tweet_bla <- read_delim("~/Emotion_Analysis_TM/data.tweet.txt", "\t", escape_double = FALSE, trim_ws = TRUE)
+#####MAPA############
 
 
 map.data <- map_data("world")
@@ -113,6 +95,16 @@ ggplot(map.data) + geom_map(aes(map_id = region), map = map.data, fill = "white"
   geom_point(data = points, aes(x = x, y = y), size = 3, alpha = 0.6, color = "dark green")
 #+geom_point(data = points2, aes(x = x, y = y), size = 2, alpha = 0.6, color = "light blue")
 
+
+
+
+
+
+
+
+
+
+##http://enhancedatascience.com/2017/07/17/twitter-analysis-using-r/
 
 
 
