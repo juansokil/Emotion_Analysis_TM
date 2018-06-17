@@ -1,6 +1,6 @@
 #install.packages("twitteR")
 #install.packages("streamR")
-install.packages("maps")
+#install.packages("maps")
 
 library(twitteR)
 library(streamR)
@@ -43,35 +43,29 @@ while(TRUE)
 }
 
 
-
 ###Elimina duplicados
 data.tweet <- unique(data.tweet)
-
-
-
-
-data.tweet2 <- unique(data.tweet$text)
- 
-str(data.tweet)
-
-###Formato Texto
-data.tweet$text=iconv(data.tweet$text,from="UTF-8",to="ASCII//TRANSLIT")
 
 
 ####calcula maximo RT y minimo RT####
 data.tweet[,min_RT:=min(retweet_count),by=text]
 data.tweet[,max_RT:=max(retweet_count),by=text]
 
+###Formato Texto
+data.tweet$text=iconv(data.tweet$text,from="UTF-8",to="ASCII//TRANSLIT")
+data.tweet$text=iconv(data.tweet$name,from="UTF-8",to="ASCII//TRANSLIT")
+data.tweet$text=iconv(data.tweet$location,from="UTF-8",to="ASCII//TRANSLIT")
+
 
 ##Remove double whitespaces
 data.tweet$text=stripWhitespace(data.tweet$text)
+data.tweet$text=stripWhitespace(data.tweet$name)
+data.tweet$text=stripWhitespace(data.tweet$location)
+
 
 ###Muestra los 10 primeros tweets y los primeros timestamp###
 head(data.tweet$text,10)
 head(data.tweet$created_at,10)
-
-###veo las variables
-str(data.tweet)
 
 ####Borra variables
 data.tweet$expanded_url <- NULL
@@ -80,34 +74,52 @@ data.tweet$user_url <- NULL
 data.tweet$description  <- NULL
 data.tweet$source  <- NULL
 
+###veo las variables
+str(data.tweet)
+
+
+
+
 
 ####Limpieza####
 
-words <- c("aborto", "vida")
+words <- c("#AbortoLegalYa","#AbortoLegalSeguroYGratuito","#13JAbortoLegal","#VotenAbortoLegal",
+           "#SalvemosLas2Vidas","#ArgentinaEsProVida","#SiALaVida","#NoAlAborto","#AbortoSesionHistorica",
+           "#QueSeaLey","#AbortoSeraLey","#NoAlAbortoEnArgentina")
+
+
 tabla <- as.data.frame(sapply(words, grepl, data.tweet$text))
 
+###Junta###
 data.tweet <- cbind(data.tweet, tabla)
 
 
+data.tweet2 = data.tweet[data.tweet$`#AbortoLegalYa` == TRUE |
+                        data.tweet$`#AbortoLegalSeguroYGratuito` == TRUE |
+                        data.tweet$`#13JAbortoLegal` == TRUE |
+                        data.tweet$`#VotenAbortoLegal` == TRUE |
+                        data.tweet$`#SalvemosLas2Vidas` == TRUE |
+                        data.tweet$`#ArgentinaEsProVida` == TRUE |
+                        data.tweet$`#SiALaVida` == TRUE |
+                        data.tweet$`#NoAlAborto` == TRUE |
+                        data.tweet$`#AbortoSesionHistorica` == TRUE |
+                          data.tweet$`#QueSeaLey` == TRUE |
+                          data.tweet$`#AbortoSeraLey` == TRUE |
+                          data.tweet$`#NoAlAbortoEnArgentina` == TRUE ]
 
-table(tabla$aborto)
-table(tabla$vida)
+
 
 
 ###selecciono solo los georeferenciados###
-data.tweet_georef<-subset(data.tweet, (!is.na(data.tweet$place_lat)))
+data.tweet_georef<-subset(data.tweet2, (!is.na(data.tweet2$place_lat)))
 
 
-table(data.tweet_georef$aborto)
-table(data.tweet_georef$vida)
+###Guarda las bases de tweets
+write.table(data.tweet2, file="./dataset/data.tweet.txt", row.names=FALSE, col.names=TRUE, quote=TRUE, sep="\t", eol = "\r\n")
+write.table(data.tweet_georef, file="./dataset/data.tweet_georef.txt", row.names=FALSE, col.names=TRUE, quote=TRUE, sep="\t", eol = "\r\n")
 
 
-###Guardo la base de tweets
-write.table(data.tweet, file="./data.tweet.txt", row.names=FALSE, col.names=TRUE, quote=TRUE, sep="\t", eol = "\r\n")
-
-
-
-
+###MAPA####
 
 map.data <- map_data("world")
 points <- data.frame(x = as.numeric(data.tweet_georef$place_lon), y = as.numeric(data.tweet_georef$place_lat))
