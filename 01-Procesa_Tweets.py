@@ -29,7 +29,12 @@ base_tweets1=base_tweets1.reset_index(drop=True)
 #    dia_hora.append(dato_format)
 
 base_tweets1['horario']=pd.to_datetime(base_tweets1['created_at'])
-base_tweets1['horario'] = base_tweets1['horario'] - pd.Timedelta('03:00:00') 
+base_tweets1['horario'] = base_tweets1['horario'] - pd.Timedelta('03:00:00')
+ 
+###elimino segundos
+base_tweets1['horario'] = base_tweets1['horario'].apply(lambda t: t.replace(second=0))
+
+
 
 
 ##POR AHORA QUEDA PENDIENTE
@@ -38,14 +43,17 @@ base_tweets1['horario'] = base_tweets1['horario'] - pd.Timedelta('03:00:00')
 
 
 #####Tweets por minutos###TOTAL - POSITIVOS - NEGATIVOS #
-base_tweets1.groupby('horario').agg('size').plot(color='black')
-base_tweets1[base_tweets1['#AbortoLegalYa'] | base_tweets1['#AbortoLegalSeguroYGratuito'] | base_tweets1['#AbortoSeraLey'] | base_tweets1['#QueSeaLey'] | base_tweets1['#13JAbortoLegal'] | base_tweets1['#VotenAbortoLegal']  ].groupby('horario').agg('size').plot(color='green')
-base_tweets1[base_tweets1['#SalvemosLas2Vidas'] | base_tweets1['#ArgentinaEsProVida']  | base_tweets1['#NoAlAbortoEnArgentina'] | base_tweets1['#SiALaVida'] | base_tweets1['#NoAlAbortoEnArgentina'] ].groupby('horario').agg('size').plot(color='blue')                 
-base_tweets1[base_tweets1['text'].str.contains('Carrio', 'carrio', regex=False)].groupby('horario').agg('size').plot(color='yellow')
-base_tweets1[base_tweets1['text'].str.contains('olmedo', 'Olmedo' , regex=False)  ].groupby('horario').agg('size').plot(color='red')
-plt.xticks(base_tweets1['horario'],rotation = 150)
-plt.locator_params(axis='x', nbins=20)
+base_tweets1.groupby('horario').agg('size').plot(color='black', label='Total')
+base_tweets1[base_tweets1['#AbortoLegalYa'] | base_tweets1['#AbortoLegalSeguroYGratuito'] | base_tweets1['#AbortoSeraLey'] | base_tweets1['#QueSeaLey'] | base_tweets1['#13JAbortoLegal'] | base_tweets1['#VotenAbortoLegal']  ].groupby('horario').agg('size').plot(color='green', label='A Favor')
+base_tweets1[base_tweets1['#SalvemosLas2Vidas'] | base_tweets1['#ArgentinaEsProVida']  | base_tweets1['#NoAlAbortoEnArgentina'] | base_tweets1['#SiALaVida'] | base_tweets1['#NoAlAbortoEnArgentina'] ].groupby('horario').agg('size').plot(color='blue', label='En Contra')                 
+#base_tweets1[base_tweets1['text'].str.contains('Carrio', 'carrio', regex=False)].groupby('horario').agg('size').plot(color='yellow', label='Carrio')
+#base_tweets1[base_tweets1['text'].str.contains('olmedo', 'Olmedo' , regex=False)  ].groupby('horario').agg('size').plot(color='red', label='Olmedo')
+plt.legend(loc='upper left')
+plt.xticks([min(base_tweets1['horario']),min(base_tweets1['horario'])+pd.Timedelta('06:00:00'),min(base_tweets1['horario'])+pd.Timedelta('12:00:00'),min(base_tweets1['horario'])+pd.Timedelta('18:00:00'),max(base_tweets1['horario'])], rotation=20)
 plt.show()     
+
+
+ 
 
 
 totales=base_tweets1.groupby('horario').agg('size')
@@ -60,14 +68,6 @@ result.columns = ['Total','Favor','Contra']
 result['pct_favor']=result['Favor']/result['Total']
 result['pct_contra']=result['Contra']/result['Total']
 ####hay un porcentaje importante que no los logra identificar, habria que explorar porque                                 
-
-###GRAFICA###
-result['pct_favor'].plot(color='green')
-result['pct_contra'].plot(color='blue')                                 
-plt.xticks(base_tweets1['horario'],rotation = 150)
-plt.locator_params(axis='x', nbins=20)
-plt.show()
-
 
 
 
@@ -95,22 +95,51 @@ print(base_tweets1['text_stopwords'][2])
 print(base_tweets1['text_stopwords_stem'][2])
 
 
+###Elimina usuarios, paginas y rt
+base_tweets1['text_stopwords_stem2'] = base_tweets1['text_stopwords_stem'].apply(lambda x: ' '.join([word for word in x.split() if not  word.startswith('@')]))
+base_tweets1['text_stopwords_stem2'] = base_tweets1['text_stopwords_stem2'].apply(lambda x: ' '.join([word for word in x.split() if not  word.startswith('http')]))
+base_tweets1['text_stopwords_stem2'] = base_tweets1['text_stopwords_stem2'].apply(lambda x: ' '.join([word for word in x.split() if not  word.startswith('rt')]))
+
+
+print(base_tweets1['text_stopwords_stem2'][2])
+print(base_tweets1['text_stopwords_stem'][2])
+
+
 
 ###Arma el tokenizer de twitter 
 tw = TweetTokenizer()
-
 ##lo aplica a los tweets completos- no la uso - lo hace pero no me sirve para el vectorizer
-tokens=base_tweets1['text_stopwords_stem'].apply(tw.tokenize)
+tokens=base_tweets1['text_stopwords_stem2'].apply(tw.tokenize)
 se = pd.Series(tokens)
 base_tweets1['tokenized'] = pd.DataFrame(se.values)
 
-print(base_tweets1['text_stopwords_stem'][2])
+print(base_tweets1['text_stopwords_stem2'][2])
 print(base_tweets1['tokenized'][2])
 
 
 
 ###ARMO EL BAG OF WORDS
 tf=base_tweets1['tokenized'].apply(pd.value_counts).fillna(0).astype(int)
+
+
+
+
+
+
+
+
+tf_vectorizer = CountVectorizer(analyzer = "word", tokenizer = None, min_df=5, max_df=0.70, ngram_range=(1,2), stop_words = 'english', max_features = no_features)
+tf = tf_vectorizer.fit_transform(base_genero['Resumen_lematizado'])
+bagofwords= pd.DataFrame(tf.toarray(),columns=tf_vectorizer.get_feature_names())
+bagofwords.shape
+
+
+
+
+
+
+
+
 
 
 ###### HASTA ACA ESTA BIEN#####
