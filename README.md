@@ -10,6 +10,6 @@ Stream de R para capturar datos en tiempo real.
 
 Preprocesamiento y aplicación de tecnicas en Python
 - Limpieza de datos
-- Algoritmos: Latent Dirichlet Allocation y Word2vec
+- Algoritmos: Latent Dirichlet Allocation, Word2vec y Regresión Logística
 
 
