@@ -1,9 +1,3 @@
-###Copiar Config_Local.py en el mismo directorio y cambiar por el path local abajo
-import sys
-sys.path.insert(0, '/Users/inesfrias/Documents/Posgrado/Textmining/LeyAborto/TPFinal/scripts')
-
-from Config_Local import directorio_datos 
-
 
 #%matplotlib inline 
 #%load_ext autoreload
@@ -48,20 +42,32 @@ from pprint import pprint
 
 base_tweets1 = pd.read_csv("C:/Users/Juan/Documents/GitHub/Emotion_Analysis_TM/dataset/unique_tweets.txt", sep='\t', encoding='latin1', low_memory=False)
 
+
+base_tweets1['text']=base_tweets1['text'].str.lower()  
+
+base_tweets1['text_no_ref'] = base_tweets1['text']. \
+    apply(lambda x: ' '.join([word for word in x.split() if not  word.startswith('@')]))
+base_tweets1['text_no_ref'] = base_tweets1['text_no_ref'].\
+    apply(lambda x: ' '.join([word for word in x.split() if not  word.startswith('http')]))
+base_tweets1['text_no_ref'] = base_tweets1['text_no_ref'].\
+    apply(lambda x: ' '.join([word for word in x.split() if not  word.startswith('rt')]))
+
+
+
 ###subset bases####
 ########################FAVOR#########################
-favor=base_tweets1[base_tweets1['text'].str.contains('#abortolegalta|#mediasancion|#abortolegalseguroygratuito|#quesealey|#abortoseraley|#abortolegalya|#nosotrasdecidimos|#abortolegaloclandestino|#13jabortolegal|#queelabortosealey',regex=True)]
+#favor=base_tweets1[base_tweets1['text'].str.contains('#abortolegalta|#mediasancion|#abortolegalseguroygratuito|#quesealey|#abortoseraley|#abortolegalya|#nosotrasdecidimos|#abortolegaloclandestino|#13jabortolegal|#queelabortosealey',regex=True)]
                    
 ####### TGOKENIZAR####
 def sent_to_words(sentences):
     for sentence in sentences:
         yield(gensim.utils.simple_preprocess(str(sentence), deacc=True))  # deacc=True removes punctuations
 
-corpus_favor = list(sent_to_words(favor['text_punct']))
-print(corpus_favor[:1])
+corpus = list(sent_to_words(base_tweets1['text_punct']))
+print(corpus[:1])
 
 # train model
-model = Word2Vec(corpus_favor, min_count=400)
+model = Word2Vec(corpus, min_count=597)
 # fit a 2d PCA model to the vectors
 X = model[model.wv.vocab]
 pca = PCA(n_components=2)
@@ -77,54 +83,82 @@ pyplot.show()
 print ("aborto-legal similarity:",model.wv.n_similarity(["aborto"], ["legal"]))
 print ("aborto-vida similarity:",model.wv.n_similarity(["aborto"], ["vida"]))
 
-
-w1="aborto"
-model.wv.most_similar (positive=w1)
 w2="vida"
 model.wv.most_similar (positive=w2)
 
 
-
-
-                                   
-contra=base_tweets1[base_tweets1['text'].str.contains('#provida|#salvemoslas2vidas|#salvemoslas2vidas|#noalabortoenargentina|#sialasdosvidas|#argentinaesprovida|#noalaborto|#cuidemoslas2vidas|#sialavida',regex=True)]
-
-####### TGOKENIZAR####
-def sent_to_words(sentences):
-    for sentence in sentences:
-        yield(gensim.utils.simple_preprocess(str(sentence), deacc=True))  # deacc=True removes punctuations
-
-corpus_contra = list(sent_to_words(contra['text_punct']))
-print(corpus_contra[:1])
-
-# train model
-model = Word2Vec(corpus_contra, min_count=150)
-
-
-# fit a 2d PCA model to the vectors
-X = model[model.wv.vocab]
-pca = PCA(n_components=2)
-result = pca.fit_transform(X)
-# create a scatter plot of the projection
-pyplot.scatter(result[:, 0], result[:, 1])
-words = list(model.wv.vocab)
-for i, word in enumerate(words):
-	pyplot.annotate(word, xy=(result[i, 0], result[i, 1]))
-pyplot.show()
-
-
-
-print ("aborto-legal similarity:",model.wv.n_similarity(["aborto"], ["legal"]))
-print ("aborto-vida similarity:",model.wv.n_similarity(["aborto"], ["vida"]))
-
-
-w1="aborto"
-model.wv.most_similar (positive=w1)
-w2="vida"
-model.wv.most_similar (positive=w2)
-
-
+target_word="aborto"
+aborto = words
+positiva = []
+for word in aborto:
+    positiva.append(model.wv.n_similarity([target_word], [word]))
     
+pd.DataFrame(positiva,index = aborto,columns=[target_word]).plot(kind="bar",figsize=(15,5), fontsize=8)
+
+w1="aborto"
+model.wv.most_similar (positive=w1)
+
+
+target_word="vida"
+vida = words
+negativa = []
+for word in vida:
+    negativa.append(model.wv.n_similarity([target_word], [word]))
+    
+pd.DataFrame(negativa,index = barrios,columns=[target_word]).plot(kind="bar",figsize=(15,5), fontsize=8)
+
+w2="vida"
+model.wv.most_similar (positive=w2)
+
+
+palabras = words
+# Armo una matriz de distancias
+distancias=np.zeros((len(words),len(words))) #matriz cuadrada
+for i,ti in enumerate(words):
+    for j,tj in enumerate(words):
+        distancias[i,j] = abs(1-model.wv.similarity(ti,tj))
+print (distancias.shape)
+distancias
+
+
+
+
+
+palabras = words
+# Armo una matriz de distancias
+distancias=np.zeros((len(words),len(words))) #matriz cuadrada
+for i,ti in enumerate(words):
+    for j,tj in enumerate(words):
+        distancias[i,j] = abs(1-model.wv.similarity(ti,tj))
+print (distancias.shape)
+distancias
+
+# Reduccion de la dimensionalidad y visualizacion 
+from sklearn.manifold import MDS
+from sklearn.manifold import TSNE 
+def visualize_embeddings(distancias,palabras,colores,perplexity):
+    plt.figure(figsize=(10,10))
+    # Reduccion de la dimensionalidad y visualizacion 
+    mds = MDS(n_components=2, max_iter=3000, eps=1e-9, random_state=123,
+                       dissimilarity="precomputed", n_jobs=4)
+    Y = mds.fit(distancias).embedding_
+    plt.subplot(1,2,1)
+    plt.scatter(Y[:, 0], Y[:, 1],color="black",s=3)
+    for label, x, y, color in zip(palabras, Y[:, 0], Y[:, 1],colores):
+        plt.annotate(label, xy=(x, y), xytext=(0, 0), textcoords='offset points',size=16)
+    plt.title("MDS")
+    # Reduccion de la dimensionalidad y visualizacion 
+    tsne = TSNE(n_components=2,metric="precomputed",learning_rate=1000, random_state=123,perplexity=perplexity)
+    np.set_printoptions(suppress=True)
+    plt.subplot(1,2,2)
+    Y = tsne.fit_transform(distancias)
+    plt.scatter(Y[:, 0], Y[:, 1],color="black",s=3)
+    for label, x, y, color in zip(palabras, Y[:, 0], Y[:, 1],colores):
+        plt.annotate(label, xy=(x, y), xytext=(0, 0), textcoords='offset points',size=16)
+    plt.title("TSNE")
+
+
+visualize_embeddings(distancias,palabras,colores,perplexity=2)
 
 
 
@@ -153,75 +187,3 @@ glove2word2vec(glove_input_file, word2vec_output_file)
 
 
 
-
-
-
-
-print ("mujer-cocina similarity:",w2v_model.wv.n_similarity(["mujer"], ["cocina"]))
-print ("hombre-cocina similarity:",w2v_model.wv.n_similarity(["hombre"], ["cocina"]) )
-print ("\n")
-print ("mujer-esposa similarity:",w2v_model.wv.n_similarity(["mujer"], ["esposa"]) )
-print ("hombre-esposo similarity:",w2v_model.wv.n_similarity(["hombre"], ["esposo"]) )
-print("\n")
-print ("mujer-hijos similarity:",w2v_model.wv.n_similarity(["mujer"], ["hijos"]) )
-print ("hombre-hijos similarity:",w2v_model.wv.n_similarity(["hombre"], ["hijos"]) )
-
-
-w2v_model.most_similar(positive=["biología"], negative=[], topn=25)
-
-w2v_model.most_similar(positive=["computación"], negative=[], topn=25)
-
-target_word="crimen"
-barrios = ["belgrano","caballito","ortúzar","palermo","recoleta","núñez","lugano","pompeya","martelli","flores","barracas","soldati","cañitas"]
-crimen = []
-for word in barrios:
-    crimen.append(w2v_model.wv.n_similarity([target_word], [word]))
-    
-pd.DataFrame(crimen,index = barrios,columns=[target_word]).sort_values(by=target_word).plot(kind="bar",figsize=(15,5), fontsize=20)
-
-p_robos = ["robos","armas","asesinato","ladrones","hurto","asalto"]
-p_ciencias = ["biología","química","matemática","filosofía","psicología","ciencia","ingeniería"]
-p_tiempo = ["lluvioso","soleado","calor","nublado","nieve","tormenta"]
-p_paises = ["suiza","suecia","francia","holanda","australia","perú","bolivia","paraguay","uruguay","brasil","colombia"]
-p_comida = ["pan","fideos","galletitas","queso","pizza","cerveza","vino"]
-p_tecno = ["tecnología","computadora","internet","web","hackers","monitor","mouse"]
-p_hogar = ["cocina","baño","comedor","sillones","armario","sillas","mesas","vajilla"]
-palabras = p_robos + p_ciencias + p_tiempo + p_paises + p_comida+p_tecno+p_hogar
-colores = ["black"]*len(p_robos)+["blue"]*len(p_ciencias)+["green"]*len(p_tiempo)+["red"]*len(p_paises) +["purple"]*len(p_comida)+["orange"]*len(p_tecno)+["cyan"]*len(p_hogar) 
-
-# Armo una matriz de distancias
-distancias=np.zeros((len(palabras),len(palabras))) #matriz cuadrada
-for i,ti in enumerate(palabras):
-    for j,tj in enumerate(palabras):
-        distancias[i,j] = abs(1-w2v_model.wv.similarity(ti,tj))
-print (distancias.shape)
-distancias
-
-# Reduccion de la dimensionalidad y visualizacion 
-from sklearn.manifold import MDS
-from sklearn.manifold import TSNE 
-def visualize_embeddings(distancias,palabras,colores,perplexity):
-    plt.figure(figsize=(20,10))
-    # Reduccion de la dimensionalidad y visualizacion 
-    mds = MDS(n_components=2, max_iter=3000, eps=1e-9, random_state=123,
-                       dissimilarity="precomputed", n_jobs=4)
-    Y = mds.fit(distancias).embedding_
-    plt.subplot(1,2,1)
-    plt.scatter(Y[:, 0], Y[:, 1],color="black",s=3)
-    for label, x, y, color in zip(palabras, Y[:, 0], Y[:, 1],colores):
-        plt.annotate(label, xy=(x, y), xytext=(0, 0),color=color, textcoords='offset points',size=13)
-    plt.title("MDS")
-    # Reduccion de la dimensionalidad y visualizacion 
-    tsne = TSNE(n_components=2,metric="precomputed",learning_rate=1000, random_state=123,perplexity=perplexity)
-    np.set_printoptions(suppress=True)
-    plt.subplot(1,2,2)
-    Y = tsne.fit_transform(distancias)
-    plt.scatter(Y[:, 0], Y[:, 1],color="black",s=3)
-    for label, x, y, color in zip(palabras, Y[:, 0], Y[:, 1],colores):
-        plt.annotate(label, xy=(x, y), xytext=(0, 0),color=color, textcoords='offset points',size=13)
-    plt.title("TSNE")
-
-
-visualize_embeddings(distancias,palabras,colores,perplexity=4)
-
-    

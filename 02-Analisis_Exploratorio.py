@@ -14,7 +14,13 @@ import nltk
 #####LEVANTA DATOS#####
 base_tweets1 = pd.read_csv("C:/Users/Juan/Documents/GitHub/Emotion_Analysis_TM/dataset/unique_tweets.txt", sep='\t', encoding='latin1', low_memory=False)
 base_tweets1['horario']=pd.to_datetime(base_tweets1['horario'])  
-        
+
+base_tweets1.columns
+
+
+###
+pd.crosstab(base_tweets1['#SiALaVida'], base_tweets1['#AbortoLegalYa'])
+                         
 ##############ANALISIS EXPLORATORIO######################        
 #####Tweets por minutos###TOTAL - POSITIVOS - NEGATIVOS #
 base_tweets1.groupby('horario').agg('size').plot(color='black', label='Total')
@@ -43,6 +49,13 @@ result['pct_contra']=result['Contra']/result['Total']
 
 
 
+from gensim.models.word2vec import Word2Vec
+from gensim.models import KeyedVectors
+model = KeyedVectors.load_word2vec_format('GoogleNews-vectors-negative300.bin', binary=True)
+model.wv.save_word2vec_format('googlenews.txt')
 
 
+import spacy
+nlp = spacy.load('en',vectors='en_google')
 
+nlp.vocab.load_vectors_from_bin_loc('googlenews.bin')
