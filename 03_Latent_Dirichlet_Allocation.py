@@ -30,8 +30,6 @@ base_tweets1['horario']=pd.to_datetime(base_tweets1['horario'])
 base_tweets1 = base_tweets1[~base_tweets1['text_punct'].isnull()]
 
 
-
-
 ###Cargo stopwords
 from nltk.corpus import stopwords
 stopwords=stopwords.words('spanish')
@@ -42,9 +40,9 @@ base_tweets1['text_punct'] = base_tweets1['text_punct'].apply(lambda x: ' '.join
 base_tweets1['text_punct']=base_tweets1['text_punct'].replace('\d+', 'NUM', regex=True)
 
 ###Aplica stemmer (No es muy lindo - habria que probar un lematizador)
-from nltk.stem import SnowballStemmer
-stemmer_spanish = SnowballStemmer('spanish')
-base_tweets1['text_punct'] = base_tweets1['text_punct'].apply(lambda x: ' '.join([stemmer_spanish.stem(word) for word in x.split()]))
+#from nltk.stem import SnowballStemmer
+#stemmer_spanish = SnowballStemmer('spanish')
+#base_tweets1['text_punct'] = base_tweets1['text_punct'].apply(lambda x: ' '.join([stemmer_spanish.stem(word) for word in x.split()]))
 
 
 
@@ -154,10 +152,10 @@ plt.show()
 
 ####Modelo optimo#####
 lda_model = LatentDirichletAllocation(batch_size=128, doc_topic_prior=0.1,
-             evaluate_every=-1, learning_decay=0.5,
+             evaluate_every=-1, learning_decay=0.9,
              learning_method='online', learning_offset=10.0,
              max_doc_update_iter=100, max_iter=100, mean_change_tol=0.001,
-             n_components=10, n_jobs=-1, n_topics=2, perp_tol=0.1,
+             n_components=6, n_jobs=-1, n_topics=6, perp_tol=0.1,
              random_state=100, topic_word_prior=None,
              total_samples=1000000.0, verbose=True)
 
@@ -185,7 +183,7 @@ pprint(lda_model.get_params())
 
 
 #############VER ESTO, ES UN PROBLEMITA
-lda_model.n_topics=2
+lda_model.n_topics=6
 
 # column names
 topicnames = ["Topic" + str(i) for i in range(lda_model.n_topics)]
@@ -194,10 +192,10 @@ topicnames = ["Topic" + str(i) for i in range(lda_model.n_topics)]
 
 
 # index names
-docnames = ["Doc" + str(i) for i in range(59668)]
+docnames = ["Doc" + str(i) for i in range(172072)]
 
 # index names
-docnames = ["Doc" + str(i) for i in range(59668)]
+docnames = ["Doc" + str(i) for i in range(172072)]
 
 
 # Make the pandas dataframe

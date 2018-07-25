@@ -35,29 +35,69 @@ base_tweets1['text_no_ref'] = base_tweets1['text_no_ref'].\
     apply(lambda x: ' '.join([word for word in x.split() if not  word.startswith('http')]))
 base_tweets1['text_no_ref'] = base_tweets1['text_no_ref'].\
     apply(lambda x: ' '.join([word for word in x.split() if not  word.startswith('rt')]))
+base_tweets1['text_no_ref'] = base_tweets1['text_no_ref'].\
+    apply(lambda x: ' '.join([word for word in x.split() if not  word.startswith('#')]))
 
+
+
+#base_tweets1['text_no_ref']
 
 ###Saca caracteres especiales y hashtag
-base_tweets1['text_punct'] = base_tweets1['text_no_ref'].apply(lambda x: ' '. \
-            join([word for word in x.split() if not  word.startswith('#')]))
-base_tweets1['text_punct'] = base_tweets1['text_punct'].str.replace(',',' ')
-base_tweets1['text_punct'] = base_tweets1['text_punct'].str.replace('[^\w\s]','')
+
+base_tweets1['text_punct'] = base_tweets1['text_no_ref'].str.replace(',',' ')
+base_tweets1['text_punct'] = base_tweets1['text_punct'].str.replace('/',' ')
+base_tweets1['text_punct'] = base_tweets1['text_punct'].str.replace('!',' ')
+base_tweets1['text_punct'] = base_tweets1['text_punct'].str.replace('.',' ')
+
+
+###Cargo stopwords
+from nltk.corpus import stopwords
+stopwords=stopwords.words('spanish')
+base_tweets1['text_punct'] = base_tweets1['text_punct'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stopwords)]))
+
+
+
+
+#base_tweets1['text_punct'] = base_tweets1['text_punct'].str.replace('[^\w\s]','')
 
 ###Quitar los duplicados, mantener el ultimo##  Es min() o max()? que campo toma?
-unique_tweets=base_tweets1.groupby(['text_punct']).min()
-unique_tweets = unique_tweets[unique_tweets.text_punct != ""]
-unique_tweets.dropna(subset=['text_punct'])
+#unique_tweets=base_tweets1.groupby(['text_punct']).min()
+#unique_tweets = unique_tweets[unique_tweets.text_punct != ""]
+#unique_tweets.dropna(subset=['text_punct'])
 
 
 
 unique_tweets=unique_tweets.reset_index()
 ###convierte el df a csv
 
+                               
+favor=unique_tweets[unique_tweets['text'].str.contains('#abortolegalta|#mediasancion|#abortolegalseguroygratuito|#quesealey|#abortoseraley|#abortolegalya|#nosotrasdecidimos|#abortolegaloclandestino|#13jabortolegal|#queelabortosealey',regex=True)]
+contra=unique_tweets[unique_tweets['text'].str.contains('#provida|#salvemoslas2vidas|#salvemoslas2vidas|#noalabortoenargentina|#sialasdosvidas|#argentinaesprovida|#noalaborto|#cuidemoslas2vidas|#sialavida',regex=True)]
+
+                     
+Favor=favor.copy()                     
+Contra=contra.copy()                     
+                     
+Favor['target']=1
+Contra['target']=0
+
+
+unique_tweets=Favor.append(Contra, ignore_index=True)
+
+
+
 unique_tweets.columns
 unique_tweets.drop(columns=['in_reply_to_user_id_str', 'lang',
                             'favorited', 'truncated',
        'id_str','in_reply_to_status_id_str','statuses_count',
        'followers_count', 'favourites_count', 'protected', 'time_zone','user_lang'])
+
+unique_tweets=unique_tweets[['index','text','horario','text_no_ref','text_punct','target']]
+unique_tweets = unique_tweets[unique_tweets.text_punct != 0]
+
+
+unique_tweets.groupby('target').count()
+
 
 unique_tweets.to_csv("C:/Users/Juan/Documents/GitHub/Emotion_Analysis_TM/dataset/unique_tweets.txt",  header=True, sep='\t', encoding='latin1')
 
