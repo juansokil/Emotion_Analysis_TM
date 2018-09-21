@@ -18,3 +18,8 @@ Preprocesamiento y aplicación de tecnicas en Python
 - Algoritmos: Word2vec y Latent Dirichlet Allocation
 
 
+Resultados Iniciales
+
+<p>
+  <img src="https://github.com/juansokil/Twitter_TM_Analysis/blob/master/resultados.png" width="600">
+</p>
